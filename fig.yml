@@ -1,0 +1,19 @@
+es1:
+    build: .
+    hostname: es1
+    environment: 
+        - CLUSTER_NAME=test
+        - CLUSTER_WITH=192.168.59.103:9301
+    ports:
+        - "9200:9200"
+        - "9300:9300"
+
+es2:
+    build: .
+    hostname: es2
+    environment: 
+        - CLUSTER_NAME=test
+    #     - CLUSTER_WITH=192.168.59.103
+    ports:
+        - "9201:9200"
+        - "9301:9300"

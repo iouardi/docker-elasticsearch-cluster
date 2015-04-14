@@ -1,0 +1,37 @@
+#!/bin/bash
+
+# Fail fast, including pipelines
+set -eo pipefail
+
+SCRIPT_ROOT=$(readlink -f "$(dirname "$0")"/..)
+source "${SCRIPT_ROOT}/config.sh"
+
+function main() {
+	if [ -z "$cluster_name" ]; then
+		# if not clustered then start it normally as if it is a single server
+		echo "No cluster defined, running single instance" >&2
+	else
+		cat >> /usr/share/elasticsearch/config/elasticsearch.yml << EOF
+cluster.name: $cluster_name
+script.disable_dynamic: true
+discovery.zen.ping.multicast.enabled: false
+EOF
+
+		if [ -z "$cluster_with" ]; then
+			# If clustered, but cluster with is not specified then again start normally, could be the first server in the
+			# cluster
+			echo "No cluster members defined, running single instance." >&2
+		else
+			echo "Running in cluster mode." >&2
+			cat >> /usr/share/elasticsearch/config/elasticsearch.yml << EOF
+discovery.zen.ping.unicast.hosts: ["$cluster_with"]
+EOF
+		fi
+	fi
+	supervisord
+	sleep 3
+	# Tail to keep the a foreground process active..
+	tail -f /var/log/supervisor/elasticsearch.log		
+}
+
+main "$@"
